@@ -23,7 +23,8 @@ import java.lang.reflect.Field;
 
 public class MainActivity extends AppCompatActivity {
 
-    private SudokuBits sudokuBits;
+//    private SudokuBits sudokuBits;
+    private Sudoku sudoku;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,48 +33,36 @@ public class MainActivity extends AppCompatActivity {
 
         for (int i = 0; i < 10; i++) {
             final Button b = findViewById(getResId("button"+i, R.id.class));
-            b.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    if(editMe != null) {
-                        CharSequence t = b.getText();
-                        editMe.setText(t);
-                        editMe.setBackground(null);
-                        sudokuBits.putNumber(Integer.parseInt(String.valueOf(b.getText())),editMe.getId());
-                        editMe = null;
-                    }
+            b.setOnClickListener(view -> {
+                if(editMe != null) {
+                    CharSequence t = b.getText();
+                    editMe.setText(t);
+                    editMe.setBackground(null);
+                    sudoku.putNumber(Integer.parseInt(String.valueOf(b.getText())),editMe.getId());
+                    editMe = null;
                 }
             });
         }
 
-        findViewById(getResId("random", R.id.class)).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                sudokuBits = new SudokuBits(SudokuBits.getRandom(Integer.parseInt(
-                        ((EditText)findViewById(getResId("size",R.id.class))).getText().toString())));
-                update(sudokuBits.toString());
-            }
+        findViewById(getResId("random", R.id.class)).setOnClickListener(view -> {
+            sudoku = new Sudoku(Sudoku.getRandom(Integer.parseInt(
+                    ((EditText)findViewById(getResId("size",R.id.class))).getText().toString())));
+            update(sudoku.toString());
         });
 
-        findViewById(getResId("reset", R.id.class)).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                sudokuBits= new SudokuBits();
-                update(sudokuBits.toString());
-            }
+        findViewById(getResId("reset", R.id.class)).setOnClickListener(view -> {
+            sudoku= new Sudoku();
+            update(sudoku.toString());
         });
 
-        findViewById(getResId("solve", R.id.class)).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                sudokuBits = SudokuBits.solve(sudokuBits);
-                update(sudokuBits.toString());
-            }
+        findViewById(getResId("solve", R.id.class)).setOnClickListener(view -> {
+            sudoku = Sudoku.solve(sudoku);
+            update(sudoku.toString());
         });
 
         TableLayout gl = findViewById(R.id.grid);
-        sudokuBits = new SudokuBits();
-        String board = sudokuBits.toString();
+        sudoku = new Sudoku();
+        String board = sudoku.toString();
         int i = 0, k = 0;
         for(String row : board.split("\n")) {
             TableRow tr = new TableRow(this);

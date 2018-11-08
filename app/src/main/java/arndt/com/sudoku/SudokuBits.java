@@ -176,34 +176,76 @@ public class SudokuBits {
      */
     //driver
     public static SudokuBits solve(SudokuBits sb){
+        return _diffSolve(sb,getAllowedOptions(sb));
+    }
+
+    public static List<Pair<Integer, List<Integer>>> getAllowedOptions(SudokuBits sb){
         //get all places without a number
         char[] c = BitHelper.fill(sb.orAll().toString(2),size).toCharArray();
-        int i;
-        for (i = 0; i < c.length; i++)
-            if(c[i]=='0') break;
-        return _solve(sb, c, i);
-    }private static SudokuBits _solve(SudokuBits sb, char[] c, int i){
-        if(i>=size)
-            return sb;
-        List<Integer> nums = new ArrayList<>(Arrays.asList(1,2,3,4,5,6,7,8,9));
-        Collections.shuffle(nums);
-        for (Integer j : nums) {
-            if (sb.isValid(j, i)) {
+        // get all allowed moves
+        List<Pair<Integer,List<Integer>>> optionCount = new ArrayList<>();
+        for (int i = 0; i < c.length; i++) {
+            if (c[i] != '0') continue;
+            else {
+                Pair<Integer, List<Integer>> p = new Pair<>(i, new ArrayList<>());
+                for (int j = 1; j <= 9; j++)
+                    if (sb.isValid(j, i))
+                        p.end.add(j);
+
+                optionCount.add(p);
+            }
+        }
+        Collections.sort(optionCount, (a,b)->new Integer(a.end.size()).compareTo(b.end.size()));
+        return optionCount;
+    }
+    public static List<Pair<Integer, List<Integer>>> getAllowedOptionsSubset(SudokuBits sb, List<Pair<Integer, List<Integer>>> subset){
+        // get all allowed moves
+        List<Pair<Integer, List<Integer>>> subsetClone = new ArrayList<>();
+        for (Pair<Integer, List<Integer>> p : subset) {
+            List<Integer> allowed = new ArrayList<>();
+            for (Integer i : p.end)
+                if (sb.isValid(i, p.start))
+                    allowed.add(i);
+            Pair<Integer, List<Integer>> pp = new Pair<>(p.start, allowed);
+            subsetClone.add(pp);
+        }
+        Collections.sort(subsetClone, (a,b)->new Integer(a.end.size()).compareTo(b.end.size()));
+        return subsetClone;
+    }
+    public static SudokuBits diffSolve(SudokuBits sb){
+        return _diffSolve(sb,getAllowedOptions(sb));
+    }
+
+    private static SudokuBits _diffSolve(SudokuBits sb, List<Pair<Integer, List<Integer>>> optionCount) {
+        for(Pair<Integer, List<Integer>> s : optionCount){
+            for(Integer i : s.end) {
                 SudokuBits clone = sb.clone();
-                clone.putNumber(j, i);
-                char[] cc = BitHelper.fill(clone.orAll().toString(2),size).toCharArray();
-                int k;
-                for (k = i + 1; k < c.length; k++)
-                    if(cc[k]=='0') break;
-                if(k>=size)
-                    return clone;
-                SudokuBits s = _solve(clone, cc, k);
-                if(s.orAll().bitCount()==size)
-                    return s;
+                clone.putNumber(i , s.start);
+                ArrayList<Pair<Integer, List<Integer>>> temp = new ArrayList<>(optionCount);
+                temp.remove(s);
+                List<Pair<Integer, List<Integer>>> options = getAllowedOptions(clone);//getAllowedOptionsSubset(clone,temp);//getAllowedOptions(clone);
+                List<Pair<Integer, List<Integer>>> remove = new ArrayList<>();
+                boolean noOptions = false;
+                for(Pair<Integer, List<Integer>> t : options){
+                    if(t.end.size()==0) {
+                        noOptions=true;
+                        break;//remove.add(t);
+                    }
+                    if(t.end.size() > 1 || t.end.size() == 0)
+                        break;
+                    clone.putNumber(t.end.get(0), t.start);
+                    remove.add(t);
+                }
+                if(noOptions)break;
+                options.removeAll(remove);
+                SudokuBits ss = _diffSolve(clone, options);
+                if(ss.orAll().bitCount()==size)
+                    return ss;
             }
         }
         return sb;
     }
+
 
     public void putNumber(int num, int pos) {
         numbers[num-1]=numbers[num-1].or(getNumAtPos(pos));
